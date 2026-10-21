@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name="todoist-data-exporter",
@@ -7,11 +7,11 @@ setup(
     author="Mark Campos",
     author_email="mark@mark.digital",
     url="https://github.com/markedwardcampos/todoist-data-exporter",
-    packages=find_packages(where="src"),
+    py_modules=["exporter"],
     package_dir={"": "src"},
     install_requires=[
-        "pandas>=1.0.0",
-        "todoist-api-python>=2.0.0"
+        "pandas>=2.0.0",
+        "todoist-api-python>=4.0.0,<5"
     ],
     entry_points={
         "console_scripts": [
@@ -23,5 +23,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.10",
 )

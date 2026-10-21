@@ -6,7 +6,7 @@ The **Todoist Data Exporter** is a Python script that exports data from Todoist,
 ## Features
 
 - Exports **Projects** with metadata like project names, IDs, and colors.
-- Exports **Tasks** (both active and completed) with details like content, due dates, labels, and project association.
+- Exports **Tasks** (both active and completed) with details like content, due dates, labels, and project association. Nested fields are flattened into columns (e.g. `due.date`, `due.string`) and lists such as `labels` are stored as JSON.
 - Exports **Labels** created in Todoist.
 - Exports **Sections** within projects.
 - Exports **Comments** associated with tasks and projects.
@@ -15,7 +15,8 @@ The **Todoist Data Exporter** is a Python script that exports data from Todoist,
 
 ### Prerequisites
 
-- Python 3.7 or above
+- Python 3.10 or above
+- `todoist-api-python` 4.x (the SDK for Todoist API v1)
 - A Todoist API token (obtainable from your Todoist account under **Settings > Integrations**)
 
 ### Setup
@@ -27,11 +28,13 @@ The **Todoist Data Exporter** is a Python script that exports data from Todoist,
    cd todoist-data-exporter
    ```
 
-2. **Install required packages:**
+2. **Install the package and its dependencies:**
 
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
    ```
+
+   This also installs a `todoist-exporter` command, equivalent to `python src/exporter.py`.
 
 3. **Configure your API token**:
 
@@ -55,10 +58,10 @@ This will generate CSV files in the default `data` directory:
 
 - `projects.csv` – list of all projects
 - `tasks.csv` – list of all active tasks
-- `tasks_completed.csv` – list of completed tasks
+- `tasks_completed.csv` – list of tasks completed in the last year (see `--completed_since`)
 - `labels.csv` – list of labels
 - `sections.csv` – list of sections per project
-- `comments.csv` – list of comments on tasks
+- `comments.csv` – list of comments on projects and active tasks
 
 ### Optional Command-Line Arguments
 
@@ -82,6 +85,12 @@ You can specify which entities to export using command-line arguments. Here are 
   python src/exporter.py --all --output_dir="custom_data"
   ```
 
+- Export completed tasks going back further than the default of one year:
+
+  ```bash
+  python src/exporter.py --completed_tasks --completed_since=2020-01-01
+  ```
+
 - Enable verbose output for debugging:
 
   ```bash
@@ -96,27 +105,31 @@ python src/exporter.py --help
 
 ### Arguments Summary
 
-- `--all`: Export all entities (projects, tasks, completed tasks, labels, sections, and comments).
+- `--all`: Export all entities (projects, tasks, completed tasks, labels, sections, and comments). This is also the default when no entity flags are given.
 - `--output_dir`: Specify a custom directory to save CSV files.
+- `--config`: Path to the config file holding `TOKEN` (default: `config.json`).
+- `--completed_since`: Export tasks completed on or after this date, `YYYY-MM-DD` (default: one year ago).
 - `--projects`: Export only projects.
 - `--tasks`: Export only active tasks.
 - `--completed_tasks`: Export only completed tasks.
 - `--labels`: Export only labels.
 - `--sections`: Export only sections.
-- `--comments`: Export only comments.
+- `--comments`: Export only comments (one API request per project and per active task, so this can be slow on large accounts).
 - `--verbose`: Enable detailed logging output.
 
 ## Development
 
 ### Testing
 
-Run tests using `unittest` with the following command:
+After installing with `pip install -e .`, run the tests using `unittest`:
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-This will create temporary CSV files in the `test_data` directory. Ensure `test_data` is listed in `.gitignore` to avoid committing test output files.
+The tests mock the Todoist API, so they need no token or network access, and write their CSV files to a temporary directory.
+
+If the exporter fails (for example, an invalid token), it logs the error, stops, and exits with status 1. CSVs already written by earlier exports in that run are left in place.
 
 ### Contributing
 
